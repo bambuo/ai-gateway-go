@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { setAdminName, clearAdmin } from '../stores/app'
 
 const TOKEN_KEY = 'admin_token'
 
@@ -67,6 +68,7 @@ export async function login(payload: LoginPayload): Promise<{
 }> {
   const { data } = await api.post('/admin/login', payload)
   localStorage.setItem(TOKEN_KEY, data.token)
+  setAdminName(data.admin.username)
   return data
 }
 
@@ -81,6 +83,7 @@ export async function getDashboard(): Promise<{
 
 export function logout() {
   localStorage.removeItem(TOKEN_KEY)
+  clearAdmin()
 }
 
 export function getToken(): string | null {

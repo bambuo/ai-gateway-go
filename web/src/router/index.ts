@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { getStatus, getToken } from '../api/admin'
 import Init from '../views/Init.vue'
 import Login from '../views/Login.vue'
+import AppLayout from '../components/AppLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,15 +19,22 @@ const router = createRouter({
     },
     {
       path: '/',
-      name: 'dashboard',
-      component: () => import('../views/Dashboard.vue'),
+      component: AppLayout,
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/config',
-      name: 'config',
-      component: () => import('../views/ConfigManagement.vue'),
-      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'dashboard',
+          meta: { title: '仪表盘' },
+          component: () => import('../views/Dashboard.vue'),
+        },
+        {
+          path: 'config',
+          name: 'config',
+          meta: { title: '配置管理' },
+          component: () => import('../views/ConfigManagement.vue'),
+        },
+      ],
     },
   ],
 })

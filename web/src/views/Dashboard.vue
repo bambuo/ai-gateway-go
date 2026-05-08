@@ -1,144 +1,123 @@
 <template>
-  <div class="dashboard">
-    <a-layout>
-      <a-layout-sider
-        :width="220"
-        :style="{ background: '#fff', borderRight: '1px solid var(--color-border)' }"
-      >
-        <div class="logo">AI Gateway</div>
-        <a-menu
-          :selected-keys="['dashboard']"
-          :style="{ borderRight: 'none' }"
-        >
-          <a-menu-item key="dashboard">
-            <IconDashboard /> 仪表盘
-          </a-menu-item>
-          <a-menu-item key="config" @click="goConfig">
-            <IconSettings /> 配置管理
-          </a-menu-item>
-        </a-menu>
-        <div class="logout-area">
-          <a-button type="text" @click="handleLogout">
-            <IconExport /> 退出登录
-          </a-button>
+  <a-row :gutter="16">
+    <a-col :span="8">
+      <a-card class="stat-card">
+        <template #title>
+          <a-space>
+            <icon-check-circle-fill style="color: rgb(var(--green-6))" />
+            <span>{{ t('dashboard.systemStatus') }}</span>
+          </a-space>
+        </template>
+        <div class="stat-body">
+          <a-tag color="green" size="large">{{ t('dashboard.running') }}</a-tag>
+          <p class="stat-desc">{{ t('dashboard.adminLabel') }}：{{ adminInfo?.username || '-' }}</p>
         </div>
-      </a-layout-sider>
+      </a-card>
+    </a-col>
+    <a-col :span="8">
+      <a-card class="stat-card">
+        <template #title>
+          <a-space>
+            <icon-code /> <span>{{ t('dashboard.gatewayVersion') }}</span>
+          </a-space>
+        </template>
+        <div class="stat-body">
+          <div class="stat-value">{{ dashboardData?.version || '-' }}</div>
+          <p class="stat-desc">{{ t('dashboard.desc') }}</p>
+        </div>
+      </a-card>
+    </a-col>
+    <a-col :span="8">
+      <a-card class="stat-card">
+        <template #title>
+          <a-space>
+            <icon-link /> <span>{{ t('dashboard.upstream') }}</span>
+          </a-space>
+        </template>
+        <div class="stat-body">
+          <div class="stat-value-url">{{ gatewayUpstream }}</div>
+          <p class="stat-desc">{{ t('dashboard.clientCount') }}：{{ clientCount }}</p>
+        </div>
+      </a-card>
+    </a-col>
+  </a-row>
 
-      <a-layout>
-        <a-layout-header :style="{ background: '#fff', padding: '0 24px', borderBottom: '1px solid var(--color-border)' }">
-          <div class="header-content">
-            <span class="header-title">仪表盘</span>
-            <span v-if="adminInfo" class="header-user">
-              {{ adminInfo.username }} ({{ adminInfo.email }})
-            </span>
-          </div>
-        </a-layout-header>
-
-        <a-layout-content :style="{ padding: '24px', minHeight: 'calc(100vh - 60px)' }">
-          <a-row :gutter="16">
-            <a-col :span="colSpan">
-              <a-card :style="{ marginBottom: '16px' }">
-                <a-statistic title="系统状态" :value="1" />
-                <p>系统正常运行中</p>
-              </a-card>
-            </a-col>
-            <a-col :span="colSpan">
-              <a-card :style="{ marginBottom: '16px' }">
-                <a-statistic title="版本" :value="dashboardData?.version || '-'" />
-                <p>AI Gateway 管理后台</p>
-              </a-card>
-            </a-col>
-          </a-row>
-
-          <a-card title="网关配置" :style="{ marginBottom: '16px' }">
-            <a-descriptions v-if="gatewayConfig" :data="gatewayConfig" :column="2" />
-            <a-empty v-else description="加载中..." />
-          </a-card>
-        </a-layout-content>
-      </a-layout>
-    </a-layout>
-  </div>
+  <a-card :title="t('dashboard.gatewayConfig')">
+    <a-descriptions v-if="gatewayConfig" :data="gatewayConfig" :column="2" />
+    <a-empty v-else :description="t('dashboard.loading')" />
+  </a-card>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { IconDashboard, IconSettings, IconExport } from '@arco-design/web-vue/es/icon'
-import { getDashboard, logout } from '../api/admin'
+import {
+  IconCheckCircleFill, IconCode, IconLink,
+} from '@arco-design/web-vue/es/icon'
+import { getDashboard } from '../api/admin'
 import { useRouter } from 'vue-router'
+import { useTranslate } from '../locale'
 
 const router = useRouter()
-const colSpan = 8
+const { t } = useTranslate()
 const dashboardData = ref<any>(null)
 
 const adminInfo = computed(() => dashboardData.value?.admin || null)
+const gatewayUpstream = computed(() => {
+  return dashboardData.value?.gateway?.upstream_url || '-'
+})
+const clientCount = computed(() => 0)
 const gatewayConfig = computed(() => {
   const gw = dashboardData.value?.gateway
   if (!gw) return null
   return [
-    { label: '地址', value: gw.address },
-    { label: '端口', value: String(gw.port) },
-    { label: '协议', value: gw.protocol },
-    { label: '上游地址', value: gw.upstream_url },
+    { label: t('dashboard.address'), value: gw.address },
+    { label: t('dashboard.port'), value: String(gw.port) },
+    { label: t('dashboard.protocol'), value: gw.protocol },
+    { label: t('dashboard.upstreamUrl'), value: gw.upstream_url },
   ]
 })
-
-function handleLogout() {
-  logout()
-  router.push('/login')
-}
-
-function goConfig() {
-  router.push('/config')
-}
 
 onMounted(async () => {
   try {
     dashboardData.value = await getDashboard()
   } catch {
-    // Redirect to login on failure
     router.push('/login')
   }
 })
 </script>
 
 <style scoped>
-.dashboard {
-  min-height: 100vh;
+.stat-card {
+  margin-bottom: 16px;
 }
 
-.logo {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
+.stat-card :deep(.arco-card-header) {
+  height: 44px;
+  border-bottom: none;
+}
+
+.stat-body {
+  padding: 4px 0;
+}
+
+.stat-value {
+  font-size: 24px;
   font-weight: 600;
   color: rgb(var(--primary-6));
-  border-bottom: 1px solid var(--color-border);
+  line-height: 1.4;
 }
 
-.logout-area {
-  position: absolute;
-  bottom: 16px;
-  left: 0;
-  right: 0;
-  text-align: center;
-}
-
-.header-content {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.header-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.header-user {
+.stat-value-url {
   font-size: 14px;
+  font-weight: 500;
+  color: rgb(var(--primary-6));
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.stat-desc {
+  margin: 8px 0 0;
+  font-size: 13px;
   color: var(--color-text-3);
 }
 </style>
