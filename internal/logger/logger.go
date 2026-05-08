@@ -1,40 +1,61 @@
 package logger
 
 import (
-	"log/slog"
-	"os"
 	"strings"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var auditLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+var log *zap.SugaredLogger
 
-func Setup(level string) {
-	var l slog.Level
-	switch strings.ToLower(level) {
-	case "debug":
-		l = slog.LevelDebug
-	case "info":
-		l = slog.LevelInfo
-	case "warn":
-		l = slog.LevelWarn
-	case "error":
-		l = slog.LevelError
-	default:
-		l = slog.LevelInfo
+func init() {
+	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.TimeKey = "ts"
+	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+	l, err := cfg.Build(zap.AddCallerSkip(1))
+	if err != nil {
+		panic(err)
 	}
-	slog.SetLogLoggerLevel(l)
+	log = l.Sugar()
 }
 
-func Debug(msg string, args ...any) { slog.Debug(msg, args...) }
-func Info(msg string, args ...any)  { slog.Info(msg, args...) }
-func Warn(msg string, args ...any)  { slog.Warn(msg, args...) }
-func Error(msg string, args ...any) { slog.Error(msg, args...) }
+func Setup(level string) {
+	var lvl zapcore.Level
+	switch strings.ToLower(level) {
+	case "debug":
+		lvl = zapcore.DebugLevel
+	case "info":
+		lvl = zapcore.InfoLevel
+	case "warn":
+		lvl = zapcore.WarnLevel
+	case "error":
+		lvl = zapcore.ErrorLevel
+	default:
+		lvl = zapcore.InfoLevel
+	}
+
+	cfg := zap.NewProductionConfig()
+	cfg.Level = zap.NewAtomicLevelAt(lvl)
+	cfg.EncoderConfig.TimeKey = "ts"
+	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+	l, err := cfg.Build(zap.AddCallerSkip(1))
+	if err != nil {
+		panic(err)
+	}
+	log = l.Sugar()
+}
+
+func Debug(msg string, args ...any) { log.Debugw(msg, args...) }
+func Info(msg string, args ...any)  { log.Infow(msg, args...) }
+func Warn(msg string, args ...any)  { log.Warnw(msg, args...) }
+func Error(msg string, args ...any) { log.Errorw(msg, args...) }
 
 func Audit(clientName, method, path string, status int) {
-	auditLogger.Info("请求",
-		slog.String("client", clientName),
-		slog.String("method", method),
-		slog.String("path", path),
-		slog.Int("status", status),
+	log.Infow("请求",
+		"client", clientName,
+		"method", method,
+		"path", path,
+		"status", status,
 	)
 }
