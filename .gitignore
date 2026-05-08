@@ -1,4 +1,3 @@
-gateway
 vendor/
 .env
 config.yaml
