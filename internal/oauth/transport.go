@@ -41,7 +41,7 @@ func proxyHTTPClient() *http.Client {
 		return &http.Client{Timeout: 30 * time.Second}
 	}
 
-	logger.Info("OAuth using outbound proxy", "url", proxyURL)
+	logger.Info("OAuth 使用出站代理", "url", proxyURL)
 	return &http.Client{
 		Timeout:   30 * time.Second,
 		Transport: &http.Transport{Proxy: http.ProxyURL(parsed)},
@@ -57,34 +57,34 @@ func (m *Manager) refresh(ctx context.Context) error {
 	}
 	payload, err := json.Marshal(body)
 	if err != nil {
-		return fmt.Errorf("marshal oauth body: %w", err)
+		return fmt.Errorf("序列化 OAuth 请求体: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, bytes.NewReader(payload))
 	if err != nil {
-		return fmt.Errorf("create oauth request: %w", err)
+		return fmt.Errorf("创建 OAuth 请求: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := proxyHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("oauth refresh request: %w", err)
+		return fmt.Errorf("OAuth 刷新请求失败: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("read oauth response: %w", err)
+		return fmt.Errorf("读取 OAuth 响应: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("oauth refresh failed (%d): %s", resp.StatusCode, string(respBody))
+		return fmt.Errorf("OAuth 刷新失败 (%d): %s", resp.StatusCode, string(respBody))
 	}
 
 	var result refreshResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
-		return fmt.Errorf("decode oauth response: %w", err)
+		return fmt.Errorf("解码 OAuth 响应: %w", err)
 	}
 
 	m.mu.Lock()
@@ -95,6 +95,6 @@ func (m *Manager) refresh(ctx context.Context) error {
 	m.expiresAt = time.Now().Add(time.Duration(result.ExpiresIn) * time.Second)
 	m.mu.Unlock()
 
-	logger.Info("OAuth token refreshed", "expires_at", m.expiresAt.Format(time.RFC3339))
+	logger.Info("OAuth 令牌已刷新", "expires_at", m.expiresAt.Format(time.RFC3339))
 	return nil
 }

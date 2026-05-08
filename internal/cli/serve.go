@@ -19,9 +19,9 @@ import (
 var serveCmd = &cobra.Command{
 	Use:     "serve [config-path]",
 	Aliases: []string{"start"},
-	Short:   "Start the AI gateway proxy server",
-	Long: `Start the AI gateway proxy server with the given configuration file.
-If config-path is omitted, it defaults to "config.yaml".`,
+	Short: "启动 AI Gateway 代理服务器",
+	Long: `使用指定的配置文件启动 AI Gateway 代理服务器。
+如果省略 config-path，默认使用 "config.yaml"。`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configPath := "config.yaml"
@@ -31,14 +31,14 @@ If config-path is omitted, it defaults to "config.yaml".`,
 
 		cfg, err := config.Load(configPath)
 		if err != nil {
-			return fmt.Errorf("load config: %w", err)
+			return fmt.Errorf("加载配置: %w", err)
 		}
 
 		logger.Setup(cfg.Logging.Level)
 
 		tokMgr := oauth.New(cfg.OAuth)
 		if err := tokMgr.Init(context.Background()); err != nil {
-			return fmt.Errorf("init oauth: %w", err)
+			return fmt.Errorf("初始化 OAuth: %w", err)
 		}
 		defer tokMgr.Stop()
 
@@ -47,9 +47,9 @@ If config-path is omitted, it defaults to "config.yaml".`,
 
 		srv := proxy.NewServer(cfg, authenticator, tokMgr, rw, rw)
 
-		fmt.Fprintf(os.Stderr, "AI Gateway started — config: %s\n", configPath)
+		fmt.Fprintf(os.Stderr, "AI Gateway 已启动 — 配置文件: %s\n", configPath)
 		if err := srv.Start(); err != nil {
-			log.Fatalf("server: %v", err)
+			log.Fatalf("服务器错误: %v", err)
 		}
 		return nil
 	},

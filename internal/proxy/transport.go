@@ -29,7 +29,7 @@ func newRewritingTransport(rw BodyRewriter, cfg *config.Config) *rewritingTransp
 		parsed, err := url.Parse(proxyURL)
 		if err == nil {
 			inner = &http.Transport{Proxy: http.ProxyURL(parsed)}
-			logger.Info("Using outbound proxy", "url", proxyURL)
+			logger.Info("使用出站代理", "url", proxyURL)
 		}
 	}
 
@@ -44,7 +44,7 @@ func (t *rewritingTransport) RoundTrip(req *http.Request) (*http.Response, error
 	body, err := io.ReadAll(req.Body)
 	req.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("read request body: %w", err)
+		return nil, fmt.Errorf("读取请求体: %w", err)
 	}
 
 	body = t.bodyRW.RewriteBody(body, req.URL.Path)

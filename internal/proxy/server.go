@@ -57,9 +57,9 @@ func NewServer(cfg *config.Config, auth ClientAuthenticator, tokens TokenProvide
 
 func (s *Server) buildReverseProxy() *httputil.ReverseProxy {
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		logger.Error("upstream error", "error", err)
+		logger.Error("上游请求错误", "error", err)
 		w.WriteHeader(http.StatusBadGateway)
-		json.NewEncoder(w).Encode(map[string]string{"error": "bad gateway", "detail": err.Error()})
+		json.NewEncoder(w).Encode(map[string]string{"error": "网关错误", "detail": err.Error()})
 	}
 
 	transport := newRewritingTransport(s.bodyRW, s.cfg)
@@ -118,18 +118,18 @@ func (s *Server) handleProxy(w http.ResponseWriter, r *http.Request) {
 		clientIP = clientIP[:idx]
 	}
 
-	logger.Info("request received", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP)
+	logger.Info("收到请求", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP)
 
 	clientName, ok := s.auth.Authenticate(r)
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized - provide client token via x-api-key header"})
-		logger.Warn("Unauthorized request", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP)
+		json.NewEncoder(w).Encode(map[string]string{"error": "未授权 - 请通过 x-api-key 请求头提供客户端令牌"})
+		logger.Warn("未授权的请求", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP)
 		return
 	}
 
-	logger.Info("client request", "client", clientName, "method", r.Method, "path", r.URL.Path)
+	logger.Info("客户端请求", "client", clientName, "method", r.Method, "path", r.URL.Path)
 
 	ctx := context.WithValue(r.Context(), clientKey, clientName)
 	s.proxy.ServeHTTP(w, r.WithContext(ctx))
@@ -143,10 +143,10 @@ func (s *Server) Start() error {
 
 	if tlsEnabled {
 		srv = &http.Server{Addr: addr, Handler: s.mux}
-		logger.Info("AI Gateway listening with TLS", "addr", addr)
+		logger.Info("AI Gateway 正在监听（TLS 已启用）", "addr", addr)
 	} else {
 		srv = &http.Server{Addr: addr, Handler: s.mux}
-		logger.Warn("Running without TLS - only use for local development", "addr", addr)
+		logger.Warn("正在以无 TLS 模式运行 — 仅限本地开发使用", "addr", addr)
 	}
 
 	sigCh := make(chan os.Signal, 1)
@@ -154,15 +154,15 @@ func (s *Server) Start() error {
 
 	go func() {
 		<-sigCh
-		logger.Info("Shutting down gracefully...")
+		logger.Info("正在优雅关闭...")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
-			logger.Error("Shutdown error", "error", err)
+			logger.Error("关闭出错", "error", err)
 		}
 	}()
 
-	logger.Info("AI Gateway started",
+	logger.Info("AI Gateway 已启动",
 		"upstream", s.cfg.Upstream.URL,
 		"device_id", s.cfg.Identity.DeviceID[:8]+"...",
 		"clients", len(s.cfg.Auth.Tokens),

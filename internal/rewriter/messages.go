@@ -34,7 +34,7 @@ func (r *Rewriter) rewriteMessages(body any) {
 				userID["device_id"] = r.cfg.Identity.DeviceID
 				if b, err := json.Marshal(userID); err == nil {
 					md["user_id"] = string(b)
-					logger.Debug("Rewrote metadata.user_id device_id")
+					logger.Debug("已重写 metadata.user_id 中的 device_id")
 				}
 			}
 		}
@@ -70,7 +70,7 @@ func (r *Rewriter) rewriteMessages(body any) {
 	if firstUserText != "" {
 		hash = computeCCH(firstUserText, version)
 	}
-	logger.Debug("Computed CCH", "hash", hash, "message_len", len(firstUserText))
+	logger.Debug("已计算 CCH 哈希", "hash", hash, "message_len", len(firstUserText))
 
 	// Step 5: Strip billing header + rewrite system prompt
 	if system, ok := obj["system"]; ok {
@@ -82,7 +82,7 @@ func (r *Rewriter) rewriteMessages(body any) {
 				case map[string]any:
 					if text, ok := it["text"].(string); ok {
 						if reBillingHeader.MatchString(text) {
-							logger.Debug("Stripped billing header block from system prompt")
+							logger.Debug("已从系统提示中移除计费头信息")
 							continue
 						}
 						it["text"] = rewritePromptText(text, r.cfg.PromptEnv, version, hash)

@@ -10,23 +10,23 @@ import (
 
 var genIdentityCmd = &cobra.Command{
 	Use:   "gen-identity",
-	Short: "Generate a canonical device identity",
-	Long: `Generate a random 32-byte device identity that can be used
-in the config.yaml under the identity section.`,
+	Short: "生成设备身份标识",
+	Long: `生成一个 32 字节的随机设备身份标识，
+可用于 config.yaml 中的 identity 配置段。`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		b := make([]byte, 32)
 		if _, err := rand.Read(b); err != nil {
-			return fmt.Errorf("generate random bytes: %w", err)
+			return fmt.Errorf("生成随机字节: %w", err)
 		}
 		deviceID := hex.EncodeToString(b)
 
-		fmt.Println("\nGenerated canonical identity:")
+		fmt.Println("\n已生建设备身份标识：")
 		fmt.Println()
 		fmt.Println("identity:")
 		fmt.Printf("  device_id: \"%s\"\n", deviceID)
 		fmt.Println()
-		fmt.Println("Put this in your config.yaml. All clients will appear as this device.")
+		fmt.Println("请将此配置添加到 config.yaml 中。所有客户端将以该设备身份出现。")
 		return nil
 	},
 }

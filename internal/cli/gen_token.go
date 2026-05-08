@@ -10,14 +10,14 @@ import (
 
 var genTokenCmd = &cobra.Command{
 	Use:   "gen-token [name]",
-	Short: "Generate an authentication token",
-	Long: `Generate a random 32-byte authentication token for a client.
-The optional name argument specifies the client name (default: "client-1").`,
+	Short: "生成认证令牌",
+	Long: `为客户端生成一个 32 字节的随机认证令牌。
+可选的 name 参数指定客户端名称（默认："client-1"）。`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		token := make([]byte, 32)
 		if _, err := rand.Read(token); err != nil {
-			return fmt.Errorf("generate random token: %w", err)
+			return fmt.Errorf("生成随机令牌: %w", err)
 		}
 
 		name := "client-1"
@@ -25,12 +25,12 @@ The optional name argument specifies the client name (default: "client-1").`,
 			name = args[0]
 		}
 
-		fmt.Println("\nAdd this to your config.yaml under auth.tokens:")
+		fmt.Println("\n请将以下内容添加到 config.yaml 的 auth.tokens 下：")
 		fmt.Println()
 		fmt.Printf("  - name: %s\n", name)
 		fmt.Printf("    token: %s\n", hex.EncodeToString(token))
 		fmt.Println()
-		fmt.Println("Client should set:")
+		fmt.Println("客户端应设置请求头：")
 		fmt.Printf("  Authorization: Bearer %s\n", hex.EncodeToString(token))
 		return nil
 	},

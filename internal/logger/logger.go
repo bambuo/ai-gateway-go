@@ -31,7 +31,7 @@ func Warn(msg string, args ...any)  { slog.Warn(msg, args...) }
 func Error(msg string, args ...any) { slog.Error(msg, args...) }
 
 func Audit(clientName, method, path string, status int) {
-	auditLogger.Info("request",
+	auditLogger.Info("请求",
 		slog.String("client", clientName),
 		slog.String("method", method),
 		slog.String("path", path),

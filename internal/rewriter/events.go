@@ -47,7 +47,7 @@ func (r *Rewriter) rewriteEvents(body any) {
 			data["additional_metadata"] = rewriteAdditionalMeta(meta)
 		}
 
-		logger.Debug("Rewrote event", "event_name", data["event_name"])
+		logger.Debug("已重写事件", "event_name", data["event_name"])
 	}
 }
 

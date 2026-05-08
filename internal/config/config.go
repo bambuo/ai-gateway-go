@@ -94,23 +94,23 @@ type Config struct {
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read config %s: %w", path, err)
+		return nil, fmt.Errorf("读取配置文件 %s: %w", path, err)
 	}
 
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, fmt.Errorf("解析配置文件: %w", err)
 	}
 
 	if len(cfg.Identity.DeviceID) != 64 ||
 		strings.Contains(cfg.Identity.DeviceID, "0000000000") {
-		return nil, fmt.Errorf("config: identity.device_id must be a real 64-char hex value. Run: gateway gen-identity")
+		return nil, fmt.Errorf("配置错误: identity.device_id 必须是一个有效的 64 位十六进制值。请运行: gateway gen-identity")
 	}
 	if len(cfg.Auth.Tokens) == 0 {
-		return nil, fmt.Errorf("config: auth.tokens must have at least one entry")
+		return nil, fmt.Errorf("配置错误: auth.tokens 至少需要包含一个条目")
 	}
 	if cfg.OAuth.RefreshToken == "" {
-		return nil, fmt.Errorf("config: oauth.refresh_token is required. Do a browser OAuth login on the admin machine, then copy the refresh token from ~/.claude/.credentials.json, or run: gateway gen-config")
+		return nil, fmt.Errorf("配置错误: oauth.refresh_token 是必需的。请在管理机器上通过浏览器完成 OAuth 登录，然后从 ~/.claude/.credentials.json 中复制 refresh token，或运行: gateway gen-config")
 	}
 
 	return &cfg, nil

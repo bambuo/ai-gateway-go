@@ -47,19 +47,19 @@ func (m *Manager) Init(ctx context.Context) error {
 
 	if m.accessToken != "" && m.expiresAt.After(now.Add(fiveMinutes)) {
 		remaining := int(m.expiresAt.Sub(now).Minutes())
-		logger.Info("Using existing access token", "expires_in_min", remaining)
+		logger.Info("使用已有的访问令牌", "expires_in_min", remaining)
 		m.scheduleRefresh()
 		return nil
 	}
 
 	if m.accessToken != "" {
-		logger.Info("Access token expired, refreshing...")
+		logger.Info("访问令牌已过期，正在刷新...")
 	} else {
-		logger.Info("No access token provided, refreshing...")
+		logger.Info("未提供访问令牌，正在刷新...")
 	}
 
 	if err := m.refresh(ctx); err != nil {
-		return fmt.Errorf("initial oauth refresh: %w", err)
+		return fmt.Errorf("初始 OAuth 刷新失败: %w", err)
 	}
 	m.scheduleRefresh()
 	return nil
@@ -98,7 +98,7 @@ func (m *Manager) scheduleRefresh() {
 			case <-time.After(refreshIn):
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				if err := m.refresh(ctx); err != nil {
-					logger.Error("OAuth refresh failed, retrying in 30s", "error", err)
+					logger.Error("OAuth 刷新失败，30 秒后重试", "error", err)
 					time.Sleep(30 * time.Second)
 				}
 				cancel()
