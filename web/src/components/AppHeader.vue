@@ -127,7 +127,7 @@ function handleMenuClick(key: string | number) {
 <style scoped>
 .app-header {
   height: 64px;
-  background: #fff;
+  background: var(--color-bg-2);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -217,13 +217,13 @@ function handleMenuClick(key: string | number) {
 }
 
 .lang-btn.active {
-  background: #fff;
+  background: var(--color-bg-1);
   color: rgb(var(--primary-6));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-body[arco-theme='dark'] .lang-btn.active {
-  background: var(--color-bg-2);
+.lang-btn.active:hover {
+  color: rgb(var(--primary-6));
 }
 
 .lang-btn:hover {
@@ -276,7 +276,7 @@ body[arco-theme='dark'] .lang-btn.active {
     top: 64px;
     left: 0;
     right: 0;
-    background: #fff;
+    background: var(--color-bg-2);
     border-bottom: 1px solid var(--color-border);
     padding: 12px 16px;
     flex-direction: row-reverse;

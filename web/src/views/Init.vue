@@ -281,7 +281,7 @@ async function handleSubmit() {
 .init-card {
   width: 100%;
   max-width: 680px;
-  background: #fff;
+  background: var(--color-bg-2);
   border-radius: 12px;
   padding: 40px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);

@@ -1,5 +1,5 @@
 <template>
-  <a-row :gutter="16">
+  <a-row :gutter="16" class="stat-row">
     <a-col :span="8">
       <a-card class="stat-card">
         <template #title>
@@ -41,7 +41,7 @@
       </a-card>
     </a-col>
   </a-row>
-
+  <div style="height: 16px;" />
   <a-card :title="t('dashboard.gatewayConfig')">
     <a-descriptions v-if="gatewayConfig" :data="gatewayConfig" :column="2" />
     <a-empty v-else :description="t('dashboard.loading')" />
@@ -87,8 +87,24 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.stat-row {
+  align-items: stretch;
+}
+
+.stat-row :deep(.arco-col) {
+  display: flex;
+  align-items: stretch;
+}
+
 .stat-card {
+  width: 100%;
+  height: 100%;
   margin-bottom: 16px;
+}
+
+.stat-card :deep(.arco-card-body) {
+  display: flex;
+  align-items: center;
 }
 
 .stat-card :deep(.arco-card-header) {
@@ -97,6 +113,7 @@ onMounted(async () => {
 }
 
 .stat-body {
+  width: 100%;
   padding: 4px 0;
 }
 

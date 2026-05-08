@@ -1,59 +1,59 @@
 <template>
   <a-spin :loading="loading" :tip="t('config.loading')">
     <a-tabs v-model:activeKey="activeTab" type="rounded">
-      <a-tab-pane key="server" title="Server">
+      <a-tab-pane key="server" :title="t('config.tabs.server')">
         <a-form :model="cfg.server" layout="vertical">
           <a-row :gutter="16">
             <a-col :span="8">
-              <a-form-item label="监听端口" field="server.port">
+              <a-form-item :label="t('config.server.port')" field="server.port">
                 <a-input-number v-model="cfg.server.port" :min="1" :max="65535" style="width:100%" />
               </a-form-item>
             </a-col>
           </a-row>
-          <a-divider>TLS 配置</a-divider>
+          <a-divider>{{ t('config.server.tls') }}</a-divider>
           <a-row :gutter="16">
             <a-col :span="12">
-              <a-form-item label="证书路径" field="server.tls.cert">
-                <a-input v-model="cfg.server.tls.cert" placeholder="留空则不启用 TLS" />
+              <a-form-item :label="t('config.server.cert')" field="server.tls.cert">
+                <a-input v-model="cfg.server.tls.cert" :placeholder="t('config.server.certPlaceholder')" />
               </a-form-item>
             </a-col>
             <a-col :span="12">
-              <a-form-item label="密钥路径" field="server.tls.key">
-                <a-input v-model="cfg.server.tls.key" placeholder="留空则不启用 TLS" />
+              <a-form-item :label="t('config.server.key')" field="server.tls.key">
+                <a-input v-model="cfg.server.tls.key" :placeholder="t('config.server.keyPlaceholder')" />
               </a-form-item>
             </a-col>
           </a-row>
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="upstream" title="Upstream">
+      <a-tab-pane key="upstream" :title="t('config.tabs.upstream')">
         <a-form :model="cfg.upstream" layout="vertical">
-          <a-form-item label="上游地址" field="upstream.url">
-            <a-input v-model="cfg.upstream.url" placeholder="https://api.anthropic.com" />
+          <a-form-item :label="t('config.upstream.url')" field="upstream.url">
+            <a-input v-model="cfg.upstream.url" :placeholder="t('config.upstream.placeholder')" />
           </a-form-item>
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="oauth" title="OAuth">
+      <a-tab-pane key="oauth" :title="t('config.tabs.oauth')">
         <a-alert type="info" class="mb-16">
-          网关集中管理 OAuth Token 生命周期。可通过 <code>scripts/quick-setup.sh</code> 自动提取或手动填写。
+          {{ t('config.oauth.alert') }}
         </a-alert>
         <a-form :model="cfg.oauth" layout="vertical">
           <a-row :gutter="16">
             <a-col :span="24">
-              <a-form-item label="Access Token" field="oauth.access_token">
-                <a-input-password v-model="cfg.oauth.access_token" placeholder="OAuth Access Token" />
+              <a-form-item :label="t('config.oauth.accessToken')" field="oauth.access_token">
+                <a-input-password v-model="cfg.oauth.access_token" :placeholder="t('config.oauth.accessToken')" />
               </a-form-item>
             </a-col>
           </a-row>
           <a-row :gutter="16">
             <a-col :span="18">
-              <a-form-item label="Refresh Token" field="oauth.refresh_token">
-                <a-input-password v-model="cfg.oauth.refresh_token" placeholder="OAuth Refresh Token" />
+              <a-form-item :label="t('config.oauth.refreshToken')" field="oauth.refresh_token">
+                <a-input-password v-model="cfg.oauth.refresh_token" :placeholder="t('config.oauth.refreshToken')" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="过期时间戳" field="oauth.expires_at">
+              <a-form-item :label="t('config.oauth.expiresAt')" field="oauth.expires_at">
                 <a-input-number v-model="cfg.oauth.expires_at" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
@@ -61,88 +61,88 @@
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="auth" title="Auth">
+      <a-tab-pane key="auth" :title="t('config.tabs.auth')">
         <a-alert type="info" class="mb-16">
-          客户端认证令牌列表。每个客户端使用唯一 Token 进行身份认证。
+          {{ t('config.auth.alert') }}
         </a-alert>
         <a-table :data="cfg.auth.tokens" :pagination="false" class="mb-16">
           <template #columns>
-            <a-table-column title="名称" data-index="name">
+            <a-table-column :title="t('config.auth.name')" data-index="name">
               <template #cell="{ record }">
-                <a-input v-model="record.name" placeholder="客户端名称" />
+                <a-input v-model="record.name" :placeholder="t('config.auth.namePlaceholder')" />
               </template>
             </a-table-column>
-            <a-table-column title="Token" data-index="token">
+            <a-table-column :title="t('config.auth.token')" data-index="token">
               <template #cell="{ record }">
-                <a-input-password v-model="record.token" placeholder="认证令牌" />
+                <a-input-password v-model="record.token" :placeholder="t('config.auth.tokenPlaceholder')" />
               </template>
             </a-table-column>
-            <a-table-column title="操作" :width="100">
+            <a-table-column :title="t('config.auth.action')" :width="100">
               <template #cell="{ rowIndex }">
-                <a-button type="text" status="danger" @click="removeToken(rowIndex)">删除</a-button>
+                <a-button type="text" status="danger" @click="removeToken(rowIndex)">{{ t('config.auth.delete') }}</a-button>
               </template>
             </a-table-column>
           </template>
         </a-table>
-        <a-button @click="addToken">+ 添加客户端</a-button>
+        <a-button @click="addToken">{{ t('config.auth.add') }}</a-button>
       </a-tab-pane>
 
-      <a-tab-pane key="identity" title="Identity">
+      <a-tab-pane key="identity" :title="t('config.tabs.identity')">
         <a-alert type="warning" class="mb-16">
-          Device ID 必须是 64 位十六进制值，可通过 <code>gateway gen-identity</code> 生成。
+          {{ t('config.identity.alert') }}
         </a-alert>
         <a-form :model="cfg.identity" layout="vertical">
           <a-row :gutter="16">
             <a-col :span="18">
-              <a-form-item label="Device ID" field="identity.device_id">
-                <a-input v-model="cfg.identity.device_id" placeholder="64 位十六进制值" />
+              <a-form-item :label="t('config.identity.deviceId')" field="identity.device_id">
+                <a-input v-model="cfg.identity.device_id" :placeholder="t('config.identity.deviceIdPlaceholder')" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="邮箱" field="identity.email">
-                <a-input v-model="cfg.identity.email" placeholder="admin@example.com" />
+              <a-form-item :label="t('config.identity.email')" field="identity.email">
+                <a-input v-model="cfg.identity.email" :placeholder="t('config.identity.emailPlaceholder')" />
               </a-form-item>
             </a-col>
           </a-row>
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="env" title="Env">
+      <a-tab-pane key="env" :title="t('config.tabs.env')">
         <a-alert type="info" class="mb-16">
-          规范化的环境指纹，所有客户端将统一显示为这些值。
+          {{ t('config.env.alert') }}
         </a-alert>
         <a-form :model="cfg.env" layout="vertical">
           <a-row :gutter="16">
-            <a-col :span="6"><a-form-item label="Platform"><a-input v-model="cfg.env.platform" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Platform Raw"><a-input v-model="cfg.env.platform_raw" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Arch"><a-input v-model="cfg.env.arch" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Node Version"><a-input v-model="cfg.env.node_version" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.platform')"><a-input v-model="cfg.env.platform" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.platformRaw')"><a-input v-model="cfg.env.platform_raw" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.arch')"><a-input v-model="cfg.env.arch" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.nodeVersion')"><a-input v-model="cfg.env.node_version" /></a-form-item></a-col>
           </a-row>
           <a-row :gutter="16">
-            <a-col :span="6"><a-form-item label="Terminal"><a-input v-model="cfg.env.terminal" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Package Managers"><a-input v-model="cfg.env.package_managers" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Runtimes"><a-input v-model="cfg.env.runtimes" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Version"><a-input v-model="cfg.env.version" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.terminal')"><a-input v-model="cfg.env.terminal" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.packageManagers')"><a-input v-model="cfg.env.package_managers" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.runtimes')"><a-input v-model="cfg.env.runtimes" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.version')"><a-input v-model="cfg.env.version" /></a-form-item></a-col>
           </a-row>
           <a-row :gutter="16">
-            <a-col :span="6"><a-form-item label="Version Base"><a-input v-model="cfg.env.version_base" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Build Time"><a-input v-model="cfg.env.build_time" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="Deployment Env"><a-input v-model="cfg.env.deployment_environment" /></a-form-item></a-col>
-            <a-col :span="6"><a-form-item label="VCS"><a-input v-model="cfg.env.vcs" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.versionBase')"><a-input v-model="cfg.env.version_base" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.buildTime')"><a-input v-model="cfg.env.build_time" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.deploymentEnv')"><a-input v-model="cfg.env.deployment_environment" /></a-form-item></a-col>
+            <a-col :span="6"><a-form-item :label="t('config.env.vcs')"><a-input v-model="cfg.env.vcs" /></a-form-item></a-col>
           </a-row>
           <a-row :gutter="16">
             <a-col :span="4">
-              <a-form-item label="Running with Bun">
+              <a-form-item :label="t('config.env.runningWithBun')">
                 <a-switch v-model="cfg.env.is_running_with_bun" />
               </a-form-item>
             </a-col>
             <a-col :span="4">
-              <a-form-item label="Is CI">
+              <a-form-item :label="t('config.env.isCi')">
                 <a-switch v-model="cfg.env.is_ci" />
               </a-form-item>
             </a-col>
             <a-col :span="4">
-              <a-form-item label="Claude AI Auth">
+              <a-form-item :label="t('config.env.claudeAiAuth')">
                 <a-switch v-model="cfg.env.is_claude_ai_auth" />
               </a-form-item>
             </a-col>
@@ -150,29 +150,29 @@
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="prompt_env" title="PromptEnv">
+      <a-tab-pane key="prompt_env" :title="t('config.tabs.promptEnv')">
         <a-alert type="info" class="mb-16">
-          系统提示词环境伪装值，替换提示词中的 &lt;env&gt; 块。
+          <span v-html="t('config.promptEnv.alert')" />
         </a-alert>
         <a-form :model="cfg.prompt_env" layout="vertical">
           <a-row :gutter="16">
             <a-col :span="6">
-              <a-form-item label="Platform" field="prompt_env.platform">
+              <a-form-item :label="t('config.promptEnv.platform')" field="prompt_env.platform">
                 <a-input v-model="cfg.prompt_env.platform" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="Shell" field="prompt_env.shell">
+              <a-form-item :label="t('config.promptEnv.shell')" field="prompt_env.shell">
                 <a-input v-model="cfg.prompt_env.shell" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="OS Version" field="prompt_env.os_version">
+              <a-form-item :label="t('config.promptEnv.osVersion')" field="prompt_env.os_version">
                 <a-input v-model="cfg.prompt_env.os_version" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="Working Dir" field="prompt_env.working_dir">
+              <a-form-item :label="t('config.promptEnv.workingDir')" field="prompt_env.working_dir">
                 <a-input v-model="cfg.prompt_env.working_dir" />
               </a-form-item>
             </a-col>
@@ -180,46 +180,46 @@
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="process" title="Process">
+      <a-tab-pane key="process" :title="t('config.tabs.process')">
         <a-alert type="info" class="mb-16">
-          规范化的进程指标，应在合理范围内随机化。
+          {{ t('config.process.alert') }}
         </a-alert>
         <a-form :model="cfg.process" layout="vertical">
           <a-row :gutter="16">
             <a-col :span="8">
-              <a-form-item label="Constrained Memory" field="process.constrained_memory">
+              <a-form-item :label="t('config.process.constrainedMemory')" field="process.constrained_memory">
                 <a-input-number v-model="cfg.process.constrained_memory" :min="0" :step="1048576" style="width:100%" />
               </a-form-item>
             </a-col>
             <a-col :span="8">
-              <a-form-item label="RSS Range (min)">
+              <a-form-item :label="t('config.process.rssMin')">
                 <a-input-number v-model="cfg.process.rss_range[0]" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
             <a-col :span="8">
-              <a-form-item label="RSS Range (max)">
+              <a-form-item :label="t('config.process.rssMax')">
                 <a-input-number v-model="cfg.process.rss_range[1]" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
           </a-row>
           <a-row :gutter="16">
             <a-col :span="6">
-              <a-form-item label="Heap Total (min)">
+              <a-form-item :label="t('config.process.heapTotalMin')">
                 <a-input-number v-model="cfg.process.heap_total_range[0]" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="Heap Total (max)">
+              <a-form-item :label="t('config.process.heapTotalMax')">
                 <a-input-number v-model="cfg.process.heap_total_range[1]" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="Heap Used (min)">
+              <a-form-item :label="t('config.process.heapUsedMin')">
                 <a-input-number v-model="cfg.process.heap_used_range[0]" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
             <a-col :span="6">
-              <a-form-item label="Heap Used (max)">
+              <a-form-item :label="t('config.process.heapUsedMax')">
                 <a-input-number v-model="cfg.process.heap_used_range[1]" :min="0" style="width:100%" />
               </a-form-item>
             </a-col>
@@ -227,11 +227,11 @@
         </a-form>
       </a-tab-pane>
 
-      <a-tab-pane key="logging" title="Logging">
+      <a-tab-pane key="logging" :title="t('config.tabs.logging')">
         <a-form :model="cfg.logging" layout="vertical">
           <a-row :gutter="16">
             <a-col :span="8">
-              <a-form-item label="日志级别" field="logging.level">
+              <a-form-item :label="t('config.logging.level')" field="logging.level">
                 <a-select v-model="cfg.logging.level">
                   <a-option value="debug">Debug</a-option>
                   <a-option value="info">Info</a-option>
@@ -241,10 +241,10 @@
               </a-form-item>
             </a-col>
             <a-col :span="8">
-              <a-form-item label="审计日志">
+              <a-form-item :label="t('config.logging.audit')">
                 <a-space>
                   <a-switch v-model="cfg.logging.audit" />
-                  <span>记录每个请求的客户端来源</span>
+                  <span>{{ t('config.logging.auditDesc') }}</span>
                 </a-space>
               </a-form-item>
             </a-col>

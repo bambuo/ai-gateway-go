@@ -1,12 +1,13 @@
 <template>
   <div class="app-layout">
     <a-layout :style="{ minHeight: '100vh' }">
-      <AppSidebar :activeKey="activeKey" />
+      <AppSidebar :activeKey="activeKey" :collapsed="sidebarCollapsed" />
 
       <a-layout>
         <AppHeader
           :pageTitle="pageTitle"
           :adminName="appState.adminName"
+          :collapsed="sidebarCollapsed"
           @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
         />
 
