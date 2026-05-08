@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"ai/gateway/internal/auth"
@@ -19,7 +17,7 @@ import (
 var serveCmd = &cobra.Command{
 	Use:     "serve [config-path]",
 	Aliases: []string{"start"},
-	Short: "启动 AI Gateway 代理服务器",
+	Short:   "启动 AI Gateway 代理服务器",
 	Long: `使用指定的配置文件启动 AI Gateway 代理服务器。
 如果省略 config-path，默认使用 "config.yaml"。`,
 	Args: cobra.MaximumNArgs(1),
@@ -37,9 +35,7 @@ var serveCmd = &cobra.Command{
 		logger.Setup(cfg.Logging.Level)
 
 		tokMgr := oauth.New(cfg.OAuth)
-		if err := tokMgr.Init(context.Background()); err != nil {
-			return fmt.Errorf("初始化 OAuth: %w", err)
-		}
+		tokMgr.Init()
 		defer tokMgr.Stop()
 
 		authenticator := auth.New(cfg.Auth)
@@ -47,9 +43,10 @@ var serveCmd = &cobra.Command{
 
 		srv := proxy.NewServer(cfg, authenticator, tokMgr, rw, rw)
 
-		fmt.Fprintf(os.Stderr, "AI Gateway 已启动 — 配置文件: %s\n", configPath)
+		logger.Info("AI Gateway 已启动", "config", configPath)
 		if err := srv.Start(); err != nil {
-			log.Fatalf("服务器错误: %v", err)
+			logger.Error("服务器错误", "error", err)
+			os.Exit(1)
 		}
 		return nil
 	},

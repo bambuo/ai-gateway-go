@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -11,8 +10,8 @@ import (
 )
 
 const (
-	tokenURL  = "https://platform.claude.com/v1/oauth/token"
-	clientID  = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
+	tokenURL = "https://platform.claude.com/v1/oauth/token"
+	clientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 )
 
 var defaultScopes = []string{
@@ -41,37 +40,46 @@ func New(cfg config.OAuthConfig) *Manager {
 	}
 }
 
-func (m *Manager) Init(ctx context.Context) error {
+func (m *Manager) Init() {
 	now := time.Now()
 	fiveMinutes := 5 * time.Minute
 
 	if m.accessToken != "" && m.expiresAt.After(now.Add(fiveMinutes)) {
 		remaining := int(m.expiresAt.Sub(now).Minutes())
-		logger.Info("使用已有的访问令牌", "expires_in_min", remaining)
+		logger.Info("使用已有访问令牌", "expires_in_min", remaining)
 		m.scheduleRefresh()
-		return nil
+		return
 	}
 
 	if m.accessToken != "" {
-		logger.Info("访问令牌已过期，正在刷新...")
+		logger.Info("访问令牌即将过期 — 首次请求时按需刷新")
 	} else {
-		logger.Info("未提供访问令牌，正在刷新...")
+		logger.Info("未缓存访问令牌 — 首次请求时按需刷新")
 	}
 
-	if err := m.refresh(ctx); err != nil {
-		return fmt.Errorf("初始 OAuth 刷新失败: %w", err)
-	}
 	m.scheduleRefresh()
-	return nil
 }
 
 func (m *Manager) AccessToken() string {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if time.Now().After(m.expiresAt) {
-		return ""
+	token := m.accessToken
+	expired := m.accessToken == "" || time.Now().After(m.expiresAt)
+	m.mu.RUnlock()
+
+	if expired {
+		logger.Info("未找到有效访问令牌，正在按需刷新...")
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := m.refresh(ctx); err != nil {
+			logger.Error("OAuth 按需刷新失败", "error", err)
+			return ""
+		}
+		m.mu.RLock()
+		token = m.accessToken
+		m.mu.RUnlock()
 	}
-	return m.accessToken
+
+	return token
 }
 
 func (m *Manager) Stop() {
@@ -87,19 +95,26 @@ func (m *Manager) scheduleRefresh() {
 	go func() {
 		for {
 			m.mu.RLock()
-			refreshIn := time.Until(m.expiresAt) - 5*time.Minute
-			if refreshIn < 30*time.Second {
-				refreshIn = 30 * time.Second
-			}
+			expiresAt := m.expiresAt
+			hasToken := m.accessToken != ""
 			stopCh := m.stopCh
 			m.mu.RUnlock()
+
+			var refreshIn time.Duration
+			if hasToken {
+				refreshIn = time.Until(expiresAt) - 5*time.Minute
+				if refreshIn < 30*time.Second {
+					refreshIn = 30 * time.Second
+				}
+			} else {
+				refreshIn = 5 * time.Minute
+			}
 
 			select {
 			case <-time.After(refreshIn):
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				if err := m.refresh(ctx); err != nil {
-					logger.Error("OAuth 刷新失败，30 秒后重试", "error", err)
-					time.Sleep(30 * time.Second)
+					logger.Debug("OAuth 刷新推迟 — 将在下次请求时重试", "error", err)
 				}
 				cancel()
 			case <-stopCh:
