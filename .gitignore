@@ -7,3 +7,6 @@ clients/
 *.swo
 .idea/
 go.sum
+node_modules/
+dist/
+*.db

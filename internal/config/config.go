@@ -79,6 +79,10 @@ type LoggingConfig struct {
 	Audit bool   `yaml:"audit"`
 }
 
+type AdminConfig struct {
+	DBPath string `yaml:"db_path"`
+}
+
 type Config struct {
 	Server    ServerConfig    `yaml:"server"`
 	Upstream  UpstreamConfig  `yaml:"upstream"`
@@ -89,6 +93,7 @@ type Config struct {
 	PromptEnv PromptEnvConfig `yaml:"prompt_env"`
 	Process   ProcessConfig   `yaml:"process"`
 	Logging   LoggingConfig   `yaml:"logging"`
+	Admin     AdminConfig     `yaml:"admin"`
 }
 
 func Load(path string) (*Config, error) {

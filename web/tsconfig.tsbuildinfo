@@ -1,0 +1,13 @@
+{
+    "root": [
+        "./src/env.d.ts",
+        "./src/main.ts",
+        "./src/api/admin.ts",
+        "./src/router/index.ts",
+        "./src/app.vue",
+        "./src/views/dashboard.vue",
+        "./src/views/init.vue",
+        "./src/views/login.vue"
+    ],
+    "version": "5.6.3"
+}

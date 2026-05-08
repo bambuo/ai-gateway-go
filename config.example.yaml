@@ -72,6 +72,10 @@ process:
   heap_total_range: [40000000, 80000000]
   heap_used_range: [100000000, 200000000]
 
+# 管理后台配置
+# admin:
+#   db_path: ./data/admin.db   # SQLite 数据库路径
+
 # 日志配置
 logging:
   level: info   # debug | info | warn | error
