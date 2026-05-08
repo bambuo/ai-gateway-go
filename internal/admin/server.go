@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"ai/gateway/internal/config"
 	"ai/gateway/internal/logger"
 )
 
@@ -21,10 +22,11 @@ const (
 )
 
 type Server struct {
-	port   int
-	mux    *http.ServeMux
-	srv    *http.Server
-	static string
+	port           int
+	mux            *http.ServeMux
+	srv            *http.Server
+	static         string
+	onConfigReload func(*config.Config)
 }
 
 func NewServer(port int, staticDir string) *Server {
@@ -32,6 +34,15 @@ func NewServer(port int, staticDir string) *Server {
 		port = defaultPort
 	}
 	s := &Server{port: port, static: staticDir, mux: http.NewServeMux()}
+	s.registerRoutes()
+	return s
+}
+
+func NewServerWithReload(port int, staticDir string, reloadFn func(*config.Config)) *Server {
+	if port <= 0 {
+		port = defaultPort
+	}
+	s := &Server{port: port, static: staticDir, mux: http.NewServeMux(), onConfigReload: reloadFn}
 	s.registerRoutes()
 	return s
 }
@@ -44,6 +55,9 @@ func (s *Server) registerRoutes() {
 	mux.HandleFunc("POST /api/system/init", s.withCORS(s.handleSystemInit))
 	mux.HandleFunc("POST /api/admin/login", s.withCORS(s.handleLogin))
 	mux.HandleFunc("GET /api/admin/dashboard", s.withCORS(s.withAuth(s.handleDashboard)))
+	mux.HandleFunc("GET /api/config", s.withCORS(s.withAuth(s.handleGetConfig)))
+	mux.HandleFunc("PUT /api/config", s.withCORS(s.withAuth(s.handleUpdateConfig)))
+	mux.HandleFunc("POST /api/config/reload", s.withCORS(s.withAuth(s.handleReloadConfig)))
 
 	// CORS preflight for all /api/ routes
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {

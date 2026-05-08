@@ -11,11 +11,14 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
+	"ai/gateway/internal/auth"
 	"ai/gateway/internal/config"
 	"ai/gateway/internal/logger"
+	"ai/gateway/internal/rewriter"
 )
 
 type ctxKey struct{}
@@ -31,6 +34,7 @@ type Server struct {
 	headerRW HeaderRewriter
 	upstream *url.URL
 	proxy    *httputil.ReverseProxy
+	mu       sync.RWMutex
 }
 
 func NewServer(cfg *config.Config, auth ClientAuthenticator, tokens TokenProvider, bodyRW BodyRewriter, headerRW HeaderRewriter) *Server {
@@ -53,6 +57,20 @@ func NewServer(cfg *config.Config, auth ClientAuthenticator, tokens TokenProvide
 	s.mux = mux
 	s.proxy = s.buildReverseProxy()
 	return s
+}
+
+func (s *Server) Reload(cfg *config.Config) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.cfg = cfg
+	s.auth = auth.New(cfg.Auth)
+	s.bodyRW = rewriter.New(cfg)
+	s.headerRW = rewriter.New(cfg)
+	s.upstream, _ = url.Parse(cfg.Upstream.URL)
+	s.proxy = s.buildReverseProxy()
+
+	logger.Info("代理服务器配置已热加载")
 }
 
 func (s *Server) buildReverseProxy() *httputil.ReverseProxy {

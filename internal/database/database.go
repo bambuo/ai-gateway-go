@@ -31,7 +31,7 @@ func Init(dbPath string) error {
 		return fmt.Errorf("打开数据库 %s: %w", dbPath, err)
 	}
 
-	if err := db.AutoMigrate(&model.SystemConfig{}, &model.Admin{}); err != nil {
+	if err := db.AutoMigrate(&model.SystemConfig{}, &model.Admin{}, &model.AppConfig{}); err != nil {
 		return fmt.Errorf("自动迁移: %w", err)
 	}
 
@@ -100,6 +100,25 @@ func InitSystem(req *model.InitRequest, jwtSecret string) error {
 		}
 		if err := tx.Create(&admin).Error; err != nil {
 			return fmt.Errorf("创建管理员: %w", err)
+		}
+		fc := model.DefaultFullConfig()
+		fc.Server.Port = req.Gateway.Port
+		fc.Upstream.URL = req.Gateway.UpstreamURL
+		if req.Gateway.Protocol == "https" {
+			fc.Server.TLS.Cert = req.Gateway.TLSCertPath
+			fc.Server.TLS.Key = req.Gateway.TLSKeyPath
+		}
+		jsonData, err := fc.ToJSON()
+		if err != nil {
+			return fmt.Errorf("序列化默认配置: %w", err)
+		}
+		ac := model.AppConfig{
+			Config:   jsonData,
+			Version:  1,
+			IsActive: true,
+		}
+		if err := tx.Create(&ac).Error; err != nil {
+			return fmt.Errorf("创建应用配置: %w", err)
 		}
 		return nil
 	})

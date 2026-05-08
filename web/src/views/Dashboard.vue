@@ -13,6 +13,9 @@
           <a-menu-item key="dashboard">
             <IconDashboard /> 仪表盘
           </a-menu-item>
+          <a-menu-item key="config" @click="goConfig">
+            <IconSettings /> 配置管理
+          </a-menu-item>
         </a-menu>
         <div class="logout-area">
           <a-button type="text" @click="handleLogout">
@@ -59,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { IconDashboard, IconExport } from '@arco-design/web-vue/es/icon'
+import { IconDashboard, IconSettings, IconExport } from '@arco-design/web-vue/es/icon'
 import { getDashboard, logout } from '../api/admin'
 import { useRouter } from 'vue-router'
 
@@ -82,6 +85,10 @@ const gatewayConfig = computed(() => {
 function handleLogout() {
   logout()
   router.push('/login')
+}
+
+function goConfig() {
+  router.push('/config')
 }
 
 onMounted(async () => {

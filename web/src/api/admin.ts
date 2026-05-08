@@ -86,3 +86,60 @@ export function logout() {
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
+
+export interface FullConfig {
+  server: {
+    port: number
+    tls: { cert: string; key: string }
+  }
+  upstream: { url: string }
+  oauth: { access_token: string; refresh_token: string; expires_at: number }
+  auth: { tokens: { name: string; token: string }[] }
+  identity: { device_id: string; email: string }
+  env: {
+    platform: string
+    platform_raw: string
+    arch: string
+    node_version: string
+    terminal: string
+    package_managers: string
+    runtimes: string
+    is_running_with_bun: boolean
+    is_ci: boolean
+    is_claude_ai_auth: boolean
+    version: string
+    version_base: string
+    build_time: string
+    deployment_environment: string
+    vcs: string
+  }
+  prompt_env: {
+    platform: string
+    shell: string
+    os_version: string
+    working_dir: string
+  }
+  process: {
+    constrained_memory: number
+    rss_range: [number, number]
+    heap_total_range: [number, number]
+    heap_used_range: [number, number]
+  }
+  logging: {
+    level: string
+    audit: boolean
+  }
+}
+
+export async function getConfig(): Promise<FullConfig> {
+  const { data } = await api.get('/config')
+  return data.data
+}
+
+export async function updateConfig(config: FullConfig): Promise<void> {
+  await api.put('/config', { config })
+}
+
+export async function reloadConfig(): Promise<void> {
+  await api.post('/config/reload')
+}

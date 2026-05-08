@@ -22,6 +22,12 @@ const router = createRouter({
       component: () => import('../views/Dashboard.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/config',
+      name: 'config',
+      component: () => import('../views/ConfigManagement.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
