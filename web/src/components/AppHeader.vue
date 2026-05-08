@@ -52,7 +52,7 @@
         </button>
       </div>
 
-      <a-dropdown trigger="click" @select="handleUserAction">
+      <a-trigger trigger="click" position="br" :showDelay="0">
         <button class="user-btn" aria-label="User menu" aria-haspopup="true">
           <a-avatar :size="32" :style="{ background: 'rgb(var(--primary-6))', cursor: 'pointer' }">
             {{ adminName?.charAt(0)?.toUpperCase() || 'A' }}
@@ -60,20 +60,22 @@
           <span class="user-name">{{ adminName || '-' }}</span>
         </button>
         <template #content>
-          <a-doption key="profile">
-            <template #icon><icon-user /></template>
-            {{ t('header.profile') }}
-          </a-doption>
-          <a-doption key="settings">
-            <template #icon><icon-settings /></template>
-            {{ t('header.accountSettings') }}
-          </a-doption>
-          <a-doption key="logout">
-            <template #icon><icon-export /></template>
-            {{ t('header.logout') }}
-          </a-doption>
+          <a-menu @menu-item-click="handleMenuClick">
+            <a-menu-item key="profile">
+              <template #icon><icon-user /></template>
+              {{ t('header.profile') }}
+            </a-menu-item>
+            <a-menu-item key="settings">
+              <template #icon><icon-settings /></template>
+              {{ t('header.accountSettings') }}
+            </a-menu-item>
+            <a-menu-item key="logout">
+              <template #icon><icon-export /></template>
+              {{ t('header.logout') }}
+            </a-menu-item>
+          </a-menu>
         </template>
-      </a-dropdown>
+      </a-trigger>
     </div>
 
     <button
@@ -114,9 +116,8 @@ const router = useRouter()
 const { t } = useTranslate()
 const mobileOpen = ref(false)
 
-function handleUserAction(value: string | number | Record<string, any> | undefined) {
-  const k = typeof value === 'string' ? value : String(value ?? '')
-  if (k === 'logout') {
+function handleMenuClick(key: string | number) {
+  if (key === 'logout') {
     logout()
     router.push('/login')
   }

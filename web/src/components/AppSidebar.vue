@@ -6,7 +6,7 @@
     :trigger="null"
     :style="{ background: '#fff', borderRight: '1px solid var(--color-border)' }"
   >
-    <div class="logo">{{ t('sidebar.dashboard').includes('Dashboard') ? 'AI Gateway' : 'AI Gateway' }}</div>
+    <div class="logo">AI Gateway</div>
     <a-menu
       :selected-keys="[activeKey]"
       :style="{ borderRight: 'none' }"
@@ -20,18 +20,11 @@
         {{ t('sidebar.config') }}
       </a-menu-item>
     </a-menu>
-    <div class="logout-area">
-      <a-button type="text" @click="handleLogout">
-        <template #icon><icon-export /></template>
-        <span v-if="!collapsed">{{ t('header.logout') }}</span>
-      </a-button>
-    </div>
   </a-layout-sider>
 </template>
 
 <script setup lang="ts">
-import { IconDashboard, IconSettings, IconExport } from '@arco-design/web-vue/es/icon'
-import { logout } from '../api/admin'
+import { IconDashboard, IconSettings } from '@arco-design/web-vue/es/icon'
 import { useRouter } from 'vue-router'
 import { useTranslate } from '../locale'
 
@@ -46,11 +39,6 @@ const { t } = useTranslate()
 function go(path: string) {
   router.push(path)
 }
-
-function handleLogout() {
-  logout()
-  router.push('/login')
-}
 </script>
 
 <style scoped>
@@ -63,13 +51,5 @@ function handleLogout() {
   font-weight: 600;
   color: rgb(var(--primary-6));
   border-bottom: 1px solid var(--color-border);
-}
-
-.logout-area {
-  position: absolute;
-  bottom: 16px;
-  left: 0;
-  right: 0;
-  text-align: center;
 }
 </style>
