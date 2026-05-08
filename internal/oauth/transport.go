@@ -1,0 +1,100 @@
+package oauth
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+	"time"
+
+	"ai/gateway/internal/logger"
+)
+
+type refreshResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
+func proxyHTTPClient() *http.Client {
+	proxyURL := os.Getenv("HTTPS_PROXY")
+	if proxyURL == "" {
+		proxyURL = os.Getenv("https_proxy")
+	}
+	if proxyURL == "" {
+		proxyURL = os.Getenv("HTTP_PROXY")
+	}
+	if proxyURL == "" {
+		proxyURL = os.Getenv("http_proxy")
+	}
+	if proxyURL == "" {
+		return &http.Client{Timeout: 30 * time.Second}
+	}
+
+	parsed, err := url.Parse(proxyURL)
+	if err != nil {
+		return &http.Client{Timeout: 30 * time.Second}
+	}
+
+	logger.Info("OAuth using outbound proxy", "url", proxyURL)
+	return &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: &http.Transport{Proxy: http.ProxyURL(parsed)},
+	}
+}
+
+func (m *Manager) refresh(ctx context.Context) error {
+	body := map[string]string{
+		"grant_type":    "refresh_token",
+		"refresh_token": m.refreshToken,
+		"client_id":     clientID,
+		"scope":         strings.Join(defaultScopes, " "),
+	}
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("marshal oauth body: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, bytes.NewReader(payload))
+	if err != nil {
+		return fmt.Errorf("create oauth request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := proxyHTTPClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("oauth refresh request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read oauth response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("oauth refresh failed (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result refreshResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return fmt.Errorf("decode oauth response: %w", err)
+	}
+
+	m.mu.Lock()
+	m.accessToken = result.AccessToken
+	if result.RefreshToken != "" {
+		m.refreshToken = result.RefreshToken
+	}
+	m.expiresAt = time.Now().Add(time.Duration(result.ExpiresIn) * time.Second)
+	m.mu.Unlock()
+
+	logger.Info("OAuth token refreshed", "expires_at", m.expiresAt.Format(time.RFC3339))
+	return nil
+}

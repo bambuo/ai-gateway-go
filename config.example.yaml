@@ -1,0 +1,78 @@
+# AI Gateway 配置文件
+# 复制为 config.yaml 后修改，或直接使用：bash scripts/quick-setup.sh
+
+server:
+  port: 8443
+  # TLS 证书/密钥路径（远程部署需要，本地测试不需要）
+  # 生成自签名证书：openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes
+  # tls:
+  #   cert: ./certs/cert.pem
+  #   key: ./certs/key.pem
+
+# 上游 Anthropic API
+upstream:
+  url: https://api.anthropic.com
+
+# OAuth — 网关集中管理 Token 生命周期
+# 从 macOS 钥匙串提取凭证：
+#   security find-generic-password -a "$USER" -s "Claude Code-credentials" -w | python3 -c "import sys,json; d=json.load(sys.stdin)['claudeAiOauth']; print(f'access_token: {d[\"accessToken\"]}\nrefresh_token: {d[\"refreshToken\"]}\nexpires_at: {d[\"expiresAt\"]}')"
+# 或直接运行：bash scripts/quick-setup.sh（自动提取）
+oauth:
+  access_token: ""
+  refresh_token: "你的-refresh-token"
+  expires_at: 0
+
+# 客户端认证 — 每个客户端一个唯一 Token
+# 生成 Token：gateway gen-token <名称>
+auth:
+  tokens:
+    - name: machine-a
+      token: 请替换此-token-1
+    - name: machine-b
+      token: 请替换此-token-2
+
+# 规范化的设备身份 — 所有客户端统一显示为这台单一设备
+# 生成新身份：gateway gen-identity
+identity:
+  device_id: "0000000000000000000000000000000000000000000000000000000000000000"
+  email: "user@example.com"
+
+# 规范化的环境指纹
+# 应匹配真实机器的配置，看起来自然
+env:
+  platform: darwin
+  platform_raw: darwin
+  arch: arm64
+  node_version: v24.3.0
+  terminal: iTerm2.app
+  package_managers: npm,pnpm
+  runtimes: node
+  is_running_with_bun: false
+  is_ci: false
+  is_claude_ai_auth: true
+  version: "2.1.81"
+  version_base: "2.1.81"
+  build_time: "2026-03-20T21:26:18Z"
+  deployment_environment: unknown-darwin
+  vcs: git
+
+# 系统提示词环境伪装
+# 这些值替换系统提示词中的 <env> 块
+# 必须与上面的 env 部分保持一致！
+prompt_env:
+  platform: darwin                    # 必须匹配 env.platform
+  shell: zsh                          # 提示词中显示的 Shell 名称
+  os_version: "Darwin 24.4.0"        # uname -sr 的输出
+  working_dir: /Users/jack/projects   # 规范化的家目录路径前缀
+
+# 规范化的进程指标（应像真实机器一样合理）
+process:
+  constrained_memory: 34359738368   # 32GB — 选一个合理值
+  rss_range: [300000000, 500000000]    # 300-500MB 合理范围
+  heap_total_range: [40000000, 80000000]
+  heap_used_range: [100000000, 200000000]
+
+# 日志配置
+logging:
+  level: info   # debug | info | warn | error
+  audit: true   # 记录每个请求由哪个客户端发起

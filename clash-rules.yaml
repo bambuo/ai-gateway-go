@@ -1,0 +1,38 @@
+# AI Gateway - Clash 规则模板
+#
+# 将以下规则添加到你的 ClashX / Clash Verge 配置中。
+# 目的：阻止客户端机器直接连接 Anthropic 服务。只有网关服务器才能访问 Anthropic。
+#
+# 使用方法：
+#   1. 打开 ClashX → 配置 → 编辑配置文件
+#   2. 将以下规则添加到已有规则之前（顺序非常重要）
+#   3. 将 gateway.office.com 替换为你的实际网关域名或 IP
+
+# === 添加到你的 'rules' 部分 ===
+
+rules:
+  # 放行到网关的连接
+  - DOMAIN,gateway.office.com,DIRECT
+
+  # 阻止所有直接连接到 Anthropic 服务
+  - DOMAIN-SUFFIX,anthropic.com,REJECT
+  - DOMAIN-SUFFIX,claude.com,REJECT
+  - DOMAIN-SUFFIX,claude.ai,REJECT
+
+  # 阻止遥测上报（备用——环境变量应已禁用此功能）
+  - DOMAIN-SUFFIX,datadoghq.com,REJECT
+
+  # 阻止更新检查（备用）
+  - DOMAIN,storage.googleapis.com,REJECT
+
+  # ... 你的其他规则 ...
+  # - MATCH,DIRECT
+
+# === 说明 ===
+#
+# 如果 Claude Code 报错 "connection refused" 或 "ECONNREFUSED"，
+# 说明 Clash 成功阻止了一个直连尝试。
+# 这是好事——说明环境变量未能阻止的泄漏被抓到了。
+#
+# 调试方法：临时将 REJECT 改为 DIRECT，查看 CC 试图连接哪个域名，
+# 然后更新网关以处理该域名。
