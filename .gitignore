@@ -1,0 +1,10 @@
+gateway
+vendor/
+.env
+config.yaml
+certs/
+clients/
+*.swp
+*.swo
+.idea/
+go.sum
