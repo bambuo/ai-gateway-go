@@ -41,7 +41,7 @@ graph LR
     style PLATFORM fill:#e67e22,color:#fff
 ```
 
-See [Architecture Document](https://github.com/motiful/ai-gateway-go/blob/main/docs/架构.md) for detailed architecture.
+See [Architecture Document](docs/架构.md) for detailed architecture.
 
 ## Quick Start
 
@@ -57,7 +57,7 @@ git clone <repo-url> ai-gateway-go
 cd ai-gateway-go
 
 # Build
-go build -o gateway ./cmd/gateway
+make build
 ```
 
 ### Pre-Startup Preparation
@@ -68,26 +68,43 @@ Before starting the gateway, you need to prepare:
 2. **Device Identity** — Run `./gateway gen-identity` to generate a canonical device ID
 3. **Client Tokens** — Run `./gateway gen-token <machine-name>` for each client machine
 
-See [Pre-Startup Preparation](https://github.com/motiful/ai-gateway-go/blob/main/docs/启动前准备.md) for detailed steps.
+See [Pre-Startup Preparation](docs/启动前准备.md) for detailed steps.
 
-### Configuration
+### Option A: CLI Mode (No Web UI)
 
 ```bash
+# Configure
 cp config.example.yaml config.yaml
-# Edit config.yaml with your OAuth token, device identity, and client tokens
-```
 
-### Run
-
-```bash
+# Start
 ./gateway serve config.yaml
 ```
 
-With custom config path:
+### Option B: Web Admin UI (Recommended)
+
+Configure the gateway through a browser interface.
 
 ```bash
-./gateway serve /path/to/config.yaml
+# 1. Build frontend
+make web-build
+
+# 2. Start admin server (:8080)
+make admin
 ```
+
+Visit [http://localhost:8080](http://localhost:8080) to complete the initialization.
+
+### Development Mode (Hot Reload)
+
+```bash
+# Terminal 1: Go admin server
+go run ./cmd/gateway admin
+
+# Terminal 2: Vite dev server
+cd web && npm run dev
+```
+
+Vite proxies `/api/*` to `localhost:8080`. Visit `http://localhost:5173`.
 
 Docker:
 
@@ -100,11 +117,27 @@ docker run -d -p 8443:8443 -v $(pwd)/config.yaml:/etc/ai-gateway/config.yaml ai-
 
 | Command | Description |
 |---------|-------------|
-| `gateway serve [config-path]` | Start the proxy server (alias `start`) |
+| `gateway serve [config-path]` | Start the proxy server (file mode) |
+| `gateway serve --db ./data/admin.db` | Start the proxy server (DB mode) |
+| `gateway admin` | Start Web admin UI (:8080) |
 | `gateway gen-identity` | Generate a canonical device identity |
 | `gateway gen-token [name]` | Generate a client authentication token |
 | `gateway help [command]` | Show help for any command |
 | `gateway completion [shell]` | Generate shell autocompletion scripts |
+
+## Makefile Commands
+
+| Command | Description |
+|---------|-------------|
+| `make build` | Build binary |
+| `make test` | Run tests |
+| `make run` | Build and start proxy server |
+| `make admin` | Build frontend and start admin UI |
+| `make web-install` | Install frontend dependencies |
+| `make web-dev` | Start Vite dev server |
+| `make web-build` | Build frontend assets |
+| `make clean` | Clean build artifacts |
+| `make docker` | Build Docker image |
 
 ## Configuration Guide
 
@@ -220,6 +253,46 @@ go build -ldflags="-s -w" -o gateway ./cmd/gateway
 # Docker image (< 15MB)
 docker build -t ai-gateway:latest .
 ```
+
+## Project Structure
+
+```
+.
+├── cmd/gateway/               # Binary entry point
+├── internal/
+│   ├── admin/                 # Web admin UI (Chi router + API)
+│   ├── auth/                  # Client authentication
+│   ├── cli/                   # Cobra commands (serve / admin / gen-*)
+│   ├── config/                # Config loading & conversion
+│   ├── database/              # SQLite database (GORM)
+│   ├── logger/                # Structured logging
+│   ├── model/                 # Data models
+│   ├── oauth/                 # OAuth lifecycle management
+│   ├── proxy/                 # Reverse proxy server
+│   └── rewriter/              # Request body/header rewriting
+├── web/                       # Vue 3 + Arco Design admin frontend
+│   ├── src/
+│   │   ├── views/             # Init / Login / Dashboard / ConfigManagement
+│   │   ├── router/            # Route guards (init check + JWT auth)
+│   │   └── api/               # API call wrappers
+│   └── vite.config.ts         # Dev proxy config
+├── docs/                      # Documents
+├── scripts/                   # Helper scripts
+├── config.example.yaml        # Config template
+├── Dockerfile                 # Docker build
+├── docker-compose.yml         # Docker Compose
+├── Makefile                   # Build/test/run commands
+└── go.mod                     # Module: ai/gateway
+```
+
+## Configuration Sources
+
+Two ways to configure the gateway:
+
+1. **YAML file** (traditional) — `gateway serve config.yaml`
+2. **SQLite database** (recommended) — Initialize via Web admin UI, then `gateway serve --db ./data/admin.db`
+
+In DB mode, the gateway loads config from the database first and supports hot-reload through the admin UI.
 
 ## Comparison with TypeScript Version
 
