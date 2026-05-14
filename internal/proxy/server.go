@@ -19,6 +19,9 @@ import (
 	"ai/gateway/internal/config"
 	"ai/gateway/internal/logger"
 	"ai/gateway/internal/rewriter"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type ctxKey struct{}
@@ -27,7 +30,7 @@ var clientKey = &ctxKey{}
 
 type Server struct {
 	cfg      *config.Config
-	mux      *http.ServeMux
+	router   *chi.Mux
 	auth     ClientAuthenticator
 	tokens   TokenProvider
 	bodyRW   BodyRewriter
@@ -49,12 +52,14 @@ func NewServer(cfg *config.Config, auth ClientAuthenticator, tokens TokenProvide
 		upstream: upstreamURL,
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /_health", s.handleHealth)
-	mux.HandleFunc("GET /_verify", s.handleVerify)
-	mux.HandleFunc("/", s.handleProxy)
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Recoverer)
+	router.Get("/_health", s.handleHealth)
+	router.Get("/_verify", s.handleVerify)
+	router.NotFound(s.handleProxy)
 
-	s.mux = mux
+	s.router = router
 	s.proxy = s.buildReverseProxy()
 	return s
 }
@@ -135,19 +140,20 @@ func (s *Server) handleProxy(w http.ResponseWriter, r *http.Request) {
 	if idx := strings.LastIndex(clientIP, ":"); idx != -1 {
 		clientIP = clientIP[:idx]
 	}
+	reqID := middleware.GetReqID(r.Context())
 
-	logger.Info("收到请求", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP)
+	logger.Info("收到请求", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP, "request_id", reqID)
 
 	clientName, ok := s.auth.Authenticate(r)
 	if !ok {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "未授权 - 请通过 x-api-key 请求头提供客户端令牌"})
-		logger.Warn("未授权的请求", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP)
+		logger.Warn("未授权的请求", "method", r.Method, "path", r.URL.Path, "client_ip", clientIP, "request_id", reqID)
 		return
 	}
 
-	logger.Info("客户端请求", "client", clientName, "method", r.Method, "path", r.URL.Path)
+	logger.Info("客户端请求", "client", clientName, "method", r.Method, "path", r.URL.Path, "request_id", reqID)
 
 	ctx := context.WithValue(r.Context(), clientKey, clientName)
 	s.proxy.ServeHTTP(w, r.WithContext(ctx))
@@ -160,11 +166,11 @@ func (s *Server) Start() error {
 	tlsEnabled := s.cfg.Server.TLS.Cert != "" && s.cfg.Server.TLS.Key != ""
 
 	if tlsEnabled {
-		srv = &http.Server{Addr: addr, Handler: s.mux}
-		logger.Info("AI Gateway 正在监听（TLS 已启用）", "addr", addr)
+		srv = &http.Server{Addr: addr, Handler: s.router}
+		logger.Info("AI Gateway 正在监听（TLS 已启用）", "service", "proxy", "addr", addr)
 	} else {
-		srv = &http.Server{Addr: addr, Handler: s.mux}
-		logger.Warn("正在以无 TLS 模式运行 — 仅限本地开发使用", "addr", addr)
+		srv = &http.Server{Addr: addr, Handler: s.router}
+		logger.Warn("正在以无 TLS 模式运行 — 仅限本地开发使用", "service", "proxy", "addr", addr)
 	}
 
 	sigCh := make(chan os.Signal, 1)
@@ -172,15 +178,16 @@ func (s *Server) Start() error {
 
 	go func() {
 		<-sigCh
-		logger.Info("正在优雅关闭...")
+		logger.Info("正在优雅关闭...", "service", "proxy")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
-			logger.Error("关闭出错", "error", err)
+			logger.Error("关闭出错", "service", "proxy", "error", err)
 		}
 	}()
 
 	logger.Info("AI Gateway 已启动",
+		"service", "proxy",
 		"upstream", s.cfg.Upstream.URL,
 		"device_id", s.cfg.Identity.DeviceID[:8]+"...",
 		"clients", len(s.cfg.Auth.Tokens),
